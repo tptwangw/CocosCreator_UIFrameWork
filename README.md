@@ -1,5 +1,6 @@
 
 ## 使用过程中有任何问题 可以添加我的QQ 1099263878
+### Cocos Creator交流群: 521643513
 
 # 基于cocos creator的UI框架, 当前使用的cocos creator版本2.4.3版本
         中心思想, 将所有的UI窗体分为4类管理(普通窗体, 固定窗体, 弹出窗体, 独立窗体), 再将窗体制作成预制体, 动态加载与释放;
@@ -73,6 +74,7 @@
 
 ## 2020/10/19 Mask Plus, 支持自定义遮罩
 扩展了cc.Mask, 添加了一种枚举类型Polygon
+![](https://github.com/kirikayakazuto/UIFrameWorld/blob/master/doc/addMaskPlus.gif)
 
 ## 2020/10/15 添加2d光线功能
 2d光影效果, 项目在2dlight分支, 目前还在优化中 关键代码在Script/Common/light下, 有兴趣的可以看看,

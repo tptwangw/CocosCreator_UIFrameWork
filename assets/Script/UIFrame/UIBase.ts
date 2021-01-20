@@ -64,6 +64,8 @@ export default class UIBase extends UIBinder {
         autorun(this.refreshView.bind(this));
         // 加载这个UI依赖的其他资源，其他资源可以也是UI
         await this.load();
+
+        this.onInit();
     }
 
     @observable
@@ -75,9 +77,11 @@ export default class UIBase extends UIBinder {
     public refreshView(r: IReactionPublic) {
         
     }
-    
+
     /** 可以在这里进行一些资源的加载, 具体实现可以看test下的代码 */
     public async load() {}
+
+    public onInit() {}
 
     public onShow(...obj: any) {}
 
@@ -119,15 +123,12 @@ export default class UIBase extends UIBinder {
     /** 设置是否挡住触摸事件 */
     private _blocker: cc.BlockInputEvents = null;
     public setBlockInput(block: boolean) {
-        if(block && !this._blocker) {
+        if(!this._blocker)  {
             let node = new cc.Node('block_input_events');
             this._blocker = node.addComponent(cc.BlockInputEvents);
             this._blocker.node.setContentSize(AdapterMgr.inst.visibleSize);
             this.node.addChild(this._blocker.node, cc.macro.MAX_ZINDEX);
-        }else if(!block && this._blocker) {
-            this._blocker.node.destroy();
-            this._blocker.node.removeFromParent();
-            this._blocker = null;
         }
+        this._blocker.node.active = block;
     }
 }

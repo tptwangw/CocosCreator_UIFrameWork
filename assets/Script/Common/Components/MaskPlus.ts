@@ -1,6 +1,6 @@
 import { CommonUtils } from "../Utils/CommonUtils";
 
-enum MaskPlusType {
+export enum MaskPlusType {
     /**
      * !#en Rect mask.
      * !#zh 使用矩形作为遮罩
@@ -20,11 +20,32 @@ enum MaskPlusType {
      */
     IMAGE_STENCIL = 2,
 
+    /**
+     * 多边形遮罩
+     */
     Polygon = 3,
 }
 
 let _vec2_temp = new cc.Vec2();
 let _mat4_temp = new cc.Mat4();
+
+let _circlepoints =[];
+function _calculateCircle (center, radius, segements) {
+    _circlepoints.length = 0;
+    let anglePerStep = Math.PI * 2 / segements;
+    for (let step = 0; step < segements; ++step) {
+        _circlepoints.push(cc.v2(radius.x * Math.cos(anglePerStep * step) + center.x,
+            radius.y * Math.sin(anglePerStep * step) + center.y));
+    }
+
+    return _circlepoints;
+}
+
+class EllipseConfig {
+    center: cc.Vec2;
+    r: cc.Vec2;
+    segments: number;
+}
 
 /**
  * 遮罩扩展
@@ -32,11 +53,13 @@ let _mat4_temp = new cc.Mat4();
  */
 const {ccclass, property, executeInEditMode, menu, help, inspector} = cc._decorator;
 @ccclass
-@menu('i18n:MAIN_MENU.component.renderers/Mask') 
+@menu('i18n:MAIN_MENU.component.renderers/MaskPlus') 
 @executeInEditMode
 @help('i18n:COMPONENT.help_url.mask')
 @inspector('packages://maskplus/inspector.js')
 export default class MaskPlus extends cc.Mask {
+
+    static Type = MaskPlusType;
 
     @property({type: cc.Enum(MaskPlusType), override: true})
     _type: MaskPlusType = 0;
@@ -51,12 +74,19 @@ export default class MaskPlus extends cc.Mask {
         }
 
         this._type = value;
+
+        if(this._type === MaskPlusType.Polygon) {
+            if(this._polygon.length === 0) {
+                let [x, y, width, height] = this.getNodeRect();
+                this._polygon.push(cc.v2(x, y), cc.v2(x+width, y), cc.v2(x+width, y+height), cc.v2(x, y+height));
+            }
+        }
+
         if (this._type !== MaskPlusType.IMAGE_STENCIL) {
             this.spriteFrame = null;
             this.alphaThreshold = 0;
             this._updateGraphics();
-        }
-        
+        }        
         this['_activateMaterial']();
     }
 
@@ -71,26 +101,27 @@ export default class MaskPlus extends cc.Mask {
         this._updateGraphics();
     }
 
+    private ellipse: EllipseConfig = new EllipseConfig();
+    public setEllipse(center?: cc.Vec2, r?: cc.Vec2, segments?: number) {
+        this.ellipse.center = center;
+        this.ellipse.r = r;
+        this.ellipse.segments = segments || this.segements;
+    }
 
     _updateGraphics () {
         let node = this.node;
         let graphics = this['_graphics'];
         // Share render data with graphics content
         graphics.clear(false);
-        let width = node['_contentSize'].width;
-        let height = node['_contentSize'].height;
-        let x = -width * node['_anchorPoint'].x;
-        let y = -height * node['_anchorPoint'].y;
+        let [x, y, width, height] = this.getNodeRect();
         if (this['_type'] === MaskPlusType.RECT) {
             graphics.rect(x, y, width, height);
         }
         else if (this['_type'] === MaskPlusType.ELLIPSE) {
-            let center = cc.v2(x + width / 2, y + height / 2);
-            let radius = {
-                x: width / 2,
-                y: height / 2
-            };
-            let points = super['_calculateCircle'](center, radius, this['_segments']);
+            let center = this.ellipse.center || cc.v2(x + width / 2, y + height / 2);
+            let radius = this.ellipse.r || {x: width / 2,y: height / 2};
+            let segments = this.ellipse.segments || this['_segments'];
+            let points = _calculateCircle(center, radius, segments);
             for (let i = 0; i < points.length; ++i) {
                 let point = points[i];
                 if (i === 0) {
@@ -151,6 +182,15 @@ export default class MaskPlus extends cc.Mask {
         return result;
     }
 
+    private getNodeRect() {
+        let width = this.node['_contentSize'].width;
+        let height = this.node['_contentSize'].height;
+        let x = -width * this.node['_anchorPoint'].x;
+        let y = -height * this.node['_anchorPoint'].y;
+        return [x, y, width, height];
+    }
+
     
 
 }
+cc['MaskPlus'] = MaskPlus;
